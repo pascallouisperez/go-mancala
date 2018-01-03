@@ -72,12 +72,12 @@ func (g game) sum() int {
 	return sum
 }
 
-func (g game) play(hole int) game {
+func (g game) play(hole int) (game, error) {
 	if g[hole] == 0 {
-		panic("no balls in this hole")
+		return g, fmt.Errorf("no balls in this hole")
 	}
 	if (hole%2 == 0) != g.isWhiteToPlay() {
-		panic("out of sequence move")
+		return g, fmt.Errorf("out of sequence move")
 	}
 
 	var (
@@ -116,7 +116,7 @@ func (g game) play(hole int) game {
 		g[holeOp] = 0
 	}
 
-	return g
+	return g, nil
 }
 
 func (g game) moves() []int {
@@ -191,7 +191,11 @@ func (g game) minimax(depth int, white bool) (int, int) {
 	}
 
 	for _, play := range moves {
-		_, score := g.play(play).minimax(depth-1, white)
+		newG, err := g.play(play)
+		if err != nil {
+			panic(err)
+		}
+		_, score := newG.minimax(depth-1, white)
 		if (max && bestScore < score) || (!max && score < bestScore) {
 			bestScore = score
 			bestPlay = play
@@ -204,20 +208,31 @@ func (g game) minimax(depth int, white bool) (int, int) {
 func askformove() int {
 	for {
 		fmt.Printf("your move (1 to 6): ")
-		buf := make([]byte, 1)
-		if _, err := io.ReadAtLeast(os.Stdin, buf, 1); err != nil {
-			panic(err)
+		input := ""
+		for {
+			buf := make([]byte, 1)
+			if _, err := io.ReadAtLeast(os.Stdin, buf, 1); err != nil {
+				panic(err)
+			}
+			if string(buf[0]) == "\n" {
+				break
+			}
+			input = input + string(buf[0])
 		}
-		if !('1' <= buf[0] && buf[0] <= '6') {
+		move := input[0]
+		if !('1' <= move && move <= '6') {
 			fmt.Printf("... you must enter a number between 1 and 6\n")
 			continue
 		}
-		return int(buf[0]-'1') + 1
+		return int(move-'1') + 1
 	}
 }
 
 func main() {
-	g := newGame()
+	var (
+		g   = newGame()
+		err error
+	)
 	for {
 		for g.isWhiteToPlay() {
 			// 1. print the game
@@ -229,11 +244,17 @@ func main() {
 
 			// 3. apply move
 			hole := (move - 1) * 2
-			g = g.play(hole)
+			g, err = g.play(hole)
+			if err != nil {
+				fmt.Printf("error: %s\n", err)
+			}
 		}
 		for !g.isWhiteToPlay() {
 			play, _ := g.minimax(11, false)
-			g = g.play(play)
+			g, err = g.play(play)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
