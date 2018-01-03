@@ -240,6 +240,30 @@ func askformove() int {
 }
 
 func main() {
+	computerVsComputer()
+}
+
+// computerVsComputer is a fully automated play
+func computerVsComputer() {
+	var (
+		g   = newGame()
+		err error
+	)
+	fmt.Printf("%s\n", g)
+	for len(g.moves()) != 0 {
+		play, _ := g.minimax(10, g.isWhiteToPlay())
+		g, err = g.play(play)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s\n", g)
+	}
+	white, black := g.finalscore()
+	fmt.Printf("white = %d v.s. black = %d\n", white, black)
+}
+
+// interactive lets a human play against the computer
+func interactive() {
 	var (
 		g   = newGame()
 		err error
