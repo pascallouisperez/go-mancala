@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math"
+	"os"
 )
 
 // game state
@@ -199,19 +201,53 @@ func (g game) minimax(depth int, white bool) (int, int) {
 	return bestPlay, bestScore
 }
 
+func askformove() int {
+	for {
+		fmt.Printf("your move (1 to 6): ")
+		buf := make([]byte, 1)
+		if _, err := io.ReadAtLeast(os.Stdin, buf, 1); err != nil {
+			panic(err)
+		}
+		if !('1' <= buf[0] && buf[0] <= '6') {
+			fmt.Printf("... you must enter a number between 1 and 6\n")
+			continue
+		}
+		return int(buf[0]-'1') + 1
+	}
+}
+
 func main() {
 	g := newGame()
 	for {
-		moves := g.moves()
-		if len(moves) == 0 {
+		for g.isWhiteToPlay() {
+			// 1. print the game
 			fmt.Printf("%s\n", g)
-			return
+
+			// 2. ask for move
+			move := askformove()
+			fmt.Printf("move: %d\n", move)
+
+			// 3. apply move
+			hole := (move - 1) * 2
+			g = g.play(hole)
 		}
-		play, score := g.minimax(11, g.isWhiteToPlay())
-		fmt.Printf("%s\n", g)
-		fmt.Printf("play=%d, score=%d, sum=%d\n\n", play, score, g.sum())
-		g = g.play(play)
+		for !g.isWhiteToPlay() {
+			play, _ := g.minimax(11, false)
+			g = g.play(play)
+		}
 	}
+
+	// for {
+	// 	moves := g.moves()
+	// 	if len(moves) == 0 {
+	// 		fmt.Printf("%s\n", g)
+	// 		return
+	// 	}
+	// 	play, score := g.minimax(11, g.isWhiteToPlay())
+	// 	fmt.Printf("%s\n", g)
+	// 	fmt.Printf("play=%d, score=%d, sum=%d\n\n", play, score, g.sum())
+	// 	g = g.play(play)
+	// }
 
 	// g := game{
 	// 	0, 0,
