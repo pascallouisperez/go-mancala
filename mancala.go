@@ -134,6 +134,17 @@ func (g game) moves() []int {
 	return moves
 }
 
+func (g game) finalscore() (int, int) {
+	var white, black int
+	for hole := 0; hole < 14; hole += 2 {
+		white += g[hole]
+	}
+	for hole := 1; hole < 14; hole += 2 {
+		black += g[hole]
+	}
+	return white, black
+}
+
 func newGame() game {
 	var g game
 	for i := 0; i < 12; i++ {
@@ -233,98 +244,44 @@ func main() {
 		g   = newGame()
 		err error
 	)
+	fmt.Printf("%s\n", g)
+
+gameplay:
 	for {
 		for g.isWhiteToPlay() {
-			// 1. print the game
-			fmt.Printf("%s\n", g)
-
-			// 2. ask for move
+			if len(g.moves()) == 0 {
+				break gameplay
+			}
 			move := askformove()
-			fmt.Printf("move: %d\n", move)
 
-			// 3. apply move
 			hole := (move - 1) * 2
 			g, err = g.play(hole)
 			if err != nil {
 				fmt.Printf("error: %s\n", err)
 			}
+
+			fmt.Printf("\n%s\n", g)
 		}
 		for !g.isWhiteToPlay() {
+			if len(g.moves()) == 0 {
+				break gameplay
+			}
+			fmt.Printf("now, it's my turn to play... let me think...\n")
 			play, _ := g.minimax(11, false)
 			g, err = g.play(play)
 			if err != nil {
 				panic(err)
 			}
+			fmt.Printf("\n%s\n", g)
 		}
 	}
 
-	// for {
-	// 	moves := g.moves()
-	// 	if len(moves) == 0 {
-	// 		fmt.Printf("%s\n", g)
-	// 		return
-	// 	}
-	// 	play, score := g.minimax(11, g.isWhiteToPlay())
-	// 	fmt.Printf("%s\n", g)
-	// 	fmt.Printf("play=%d, score=%d, sum=%d\n\n", play, score, g.sum())
-	// 	g = g.play(play)
-	// }
-
-	// g := game{
-	// 	0, 0,
-	// 	3, 2,
-	// 	2, 0,
-	// 	0, 1,
-	// 	2, 14,
-	// 	0, 12,
-
-	// 	6, 6,
-
-	// 	1,
-	// }
-	// fmt.Printf("%s\n", g)
-	// g = g.play(9)
-	// fmt.Printf("%s\n", g)
-	// plays := []int{
-	// 	4, 0, 5, 11, 2, 1, 10, 3, 6,
-	// }
-	// for _, play := range plays {
-	// 	fmt.Printf("%s\n", g)
-	// 	g = g.play(play)
-	// }
-	// fmt.Printf("%s\n", g)
-	// play, score := g.minimax(11, g.isWhiteToPlay())
-	// fmt.Printf("play=%d, score=%d, sum=%d\n\n", play, score, g.sum())
-	// g = g.play(play)
-	// fmt.Printf("%s\n", g)
-
-	// g = g.play(0)
-	// fmt.Printf("%s\n", g)
-	// g = g.play(7)
-	// fmt.Printf("%s\n", g)
-
-	// g := game{
-	// 	1, 0,
-	// 	0, 0,
-	// 	0, 0,
-	// 	0, 0,
-	// 	0, 0,
-	// 	0, 0,
-
-	// 	0, 0,
-
-	// 	0,
-	// }
-	// play, score := g.minimax(4, g.isWhiteToPlay())
-	// fmt.Printf("%s\n", g)
-	// fmt.Printf("play=%d, score=%d, sum=%d\n\n", play, score, g.sum())
-
-	// fmt.Printf("%s\n", g)
-	// fmt.Printf("%v\n", g.moves())
-	// g = g.play(0)
-	// fmt.Printf("%s\n", g)
-	// fmt.Printf("%v\n", g.moves())
-	// g = g.play(1)
-	// fmt.Printf("%s\n", g)
-	// fmt.Printf("%v\n", g.moves())
+	white, black := g.finalscore()
+	if white < black {
+		fmt.Printf("sorry, you lost %d to %d\n", white, black)
+	} else if black < white {
+		fmt.Printf("nice! you won %d to %d\n", white, black)
+	} else {
+		fmt.Printf("it's a draw")
+	}
 }
