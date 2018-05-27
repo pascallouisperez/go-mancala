@@ -85,6 +85,24 @@ func (g game) play(hole int) (game, error) {
 		remaining = g[hole]
 		mancala   = (hole % 2) + 12
 	)
+
+	// if other side is clear, any play takes all remaining balls
+	otherSideClear := true
+	for i := (side + 1) % 2; i < 12; i += 2 {
+		if g[i] != 0 {
+			otherSideClear = false
+			break
+		}
+	}
+	if otherSideClear {
+		sum := 0
+		for i := side; i < 12; i += 2 {
+			sum += g[i]
+			g[i] = 0
+		}
+		g[12+side] += sum
+	}
+
 	// fmt.Printf("mancala=%d\n", mancala)
 
 	g[hole] = 0
@@ -114,6 +132,21 @@ func (g game) play(hole int) (game, error) {
 		holeOp := opposite[hole]
 		g[mancala] += 1 + g[holeOp]
 		g[holeOp] = 0
+	}
+
+	// other side to play if you clear out your side
+	clear := true
+	for i := side; i < 12; i += 2 {
+		// fmt.Printf("g[%d]=%d, ", i, g[i])
+		if g[i] != 0 {
+			clear = false
+			break
+		}
+	}
+	// fmt.Printf("clear=%t\n", clear)
+	if clear {
+		g[14] = (side + 1) % 2
+		// g[14] = side
 	}
 
 	return g, nil
@@ -240,7 +273,8 @@ func askformove() int {
 }
 
 func main() {
-	computerVsComputer()
+	interactive()
+	// computerVsComputer()
 }
 
 // computerVsComputer is a fully automated play
@@ -251,7 +285,7 @@ func computerVsComputer() {
 	)
 	fmt.Printf("%s\n", g)
 	for len(g.moves()) != 0 {
-		play, _ := g.minimax(10, g.isWhiteToPlay())
+		play, _ := g.minimax(11, g.isWhiteToPlay())
 		g, err = g.play(play)
 		if err != nil {
 			panic(err)
@@ -268,7 +302,7 @@ func interactive() {
 		g   = newGame()
 		err error
 	)
-	fmt.Printf("%s\n", g)
+	fmt.Printf("\033[H\033[2J%s\n", g)
 
 gameplay:
 	for {
@@ -284,7 +318,7 @@ gameplay:
 				fmt.Printf("error: %s\n", err)
 			}
 
-			fmt.Printf("\n%s\n", g)
+			fmt.Printf("\033[H\033[2J%s\n", g)
 		}
 		for !g.isWhiteToPlay() {
 			if len(g.moves()) == 0 {
@@ -296,7 +330,7 @@ gameplay:
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("\n%s\n", g)
+			fmt.Printf("\033[H\033[2J%s\n", g)
 		}
 	}
 
